@@ -1,62 +1,46 @@
-// Function to load the TradingView Chart
-function loadChart(symbol, name) {
-    document.getElementById('chart-title').innerText = `Market Chart: ${name}`;
-    new TradingView.widget({
-        "width": "100%",
-        "height": 400,
-        "symbol": `BINANCE:${symbol}USDT`,
-        "interval": "D",
-        "timezone": "Etc/UTC",
-        "theme": "dark",
-        "style": "1",
-        "locale": "en",
-        "toolbar_bg": "#f1f3f6",
-        "enable_publishing": false,
-        "hide_top_toolbar": true,
-        "save_image": false,
-        "container_id": "tradingview_widget"
-    });
+// Tab Switching Logic
+function showTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+    document.getElementById(`${tabName}-tab`).style.display = 'block';
+    
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    event.currentTarget.classList.add('active');
 }
 
-async function updateDashboard() {
+// Market Data Logic (BTC, ETH, SOL)
+async function updateMarket() {
     const container = document.getElementById('market-cards');
-
     try {
         const [cryptoRes, forexRes] = await Promise.all([
             fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd"),
             fetch("https://api.exchangerate-api.com/v4/latest/USD")
         ]);
 
-        const cryptoData = await cryptoRes.json();
+        const crypto = await cryptoRes.json();
         const rate = (await forexRes.json()).rates.NGN;
 
         const assets = [
-            { id: 'bitcoin', symbol: 'BTC', name: "Bitcoin", usd: cryptoData.bitcoin.usd },
-            { id: 'ethereum', symbol: 'ETH', name: "Ethereum", usd: cryptoData.ethereum.usd },
-            { id: 'solana', symbol: 'SOL', name: "Solana", usd: cryptoData.solana.usd }
+            { name: "Bitcoin", sym: "BTC", usd: crypto.bitcoin.usd },
+            { name: "Ethereum", sym: "ETH", usd: crypto.ethereum.usd },
+            { name: "Solana", sym: "SOL", usd: crypto.solana.usd }
         ];
 
-        container.innerHTML = ''; 
-
+        container.innerHTML = '';
         assets.forEach(asset => {
-            const ngnPrice = (asset.usd * rate).toLocaleString();
-            const card = document.createElement('div');
-            card.className = 'card clickable';
-            card.innerHTML = `
-                <h3>${asset.name} (${asset.symbol})</h3>
-                <div class="price-usd">$${asset.usd.toLocaleString()}</div>
-                <div class="price-ngn">₦${ngnPrice}</div>
+            const ngn = (asset.usd * rate).toLocaleString();
+            container.innerHTML += `
+                <div class="card">
+                    <small>${asset.sym} / NGN</small>
+                    <h3>${asset.name}</h3>
+                    <div class="price-ngn">₦${ngn}</div>
+                    <div style="opacity:0.6">$${asset.usd.toLocaleString()}</div>
+                </div>
             `;
-            // Make the card clickable to change the chart
-            card.onclick = () => loadChart(asset.symbol, asset.name);
-            container.appendChild(card);
         });
-
-    } catch (error) {
-        container.innerHTML = '<p style="color:red">Connection lost.</p>';
+    } catch (e) {
+        container.innerHTML = "Connecting to market nodes...";
     }
 }
 
-// Start everything
-updateDashboard();
-loadChart('BTC', 'Bitcoin'); // Load BTC by default
+updateMarket();
+setInterval(updateMarket, 60000); // Update every minute
