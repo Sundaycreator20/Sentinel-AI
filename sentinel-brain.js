@@ -15,9 +15,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 🔑 Secure Configuration: Look at the Render
-"vault" (Environment Variables)
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// 🔑 Secure Configuration: Looks at the Render "vault" (Environment Variables)
+const ai = new GoogleGenAI({ 
+    apiKey: process.env.GEMINI_API_KEY 
+});
 
 // 📚 QVAC LOCAL LEDGER (LIVE MARKET DATA: MAY 9, 2026)
 const localQvacCryptoMatrix = {
