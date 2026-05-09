@@ -15,8 +15,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 🔑 Gemini API Configuration
-const ai = new GoogleGenAI({ apiKey: "AIzaSyBZpprF0Y_dpabZcCPT6dHqTnEbgha8glY" });
+// 🔑 Secure Configuration: Look at the Render
+"vault" (Environment Variables)
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // 📚 QVAC LOCAL LEDGER (LIVE MARKET DATA: MAY 9, 2026)
 const localQvacCryptoMatrix = {
