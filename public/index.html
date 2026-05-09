@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel AI | Frontier Console</title>
+    <style>
+        :root { --primary: #3b82f6; --qvac-green: #10b981; --bg-dark: #020617; --panel-bg: #1e293b; --text-dim: #94a3b8; }
+        
+        /* --- BRANDED SPLASH SCREEN --- */
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999;
+            transition: opacity 0.8s ease;
+        }
+        .logo-display { width: 220px; height: auto; animation: fade-in 1.5s ease-in; }
+        .loader-track { width: 250px; height: 4px; background: #1e293b; border-radius: 10px; overflow: hidden; margin-top: 30px; }
+        .loader-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--qvac-green)); animation: load-up 2.5s forwards; }
+
+        @keyframes fade-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes load-up { 0% { width: 0%; } 100% { width: 100%; } }
+
+        /* --- DASHBOARD STYLES --- */
+        body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: #e2e8f0; margin: 0; padding: 20px; }
+        .container { max-width: 850px; margin: 40px auto; background: var(--panel-bg); padding: 35px; border-radius: 20px; border: 1px solid #334155; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        h1.header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 25px; margin-bottom: 30px; }
+        .header-logo-container { display: flex; align-items: center; gap: 15px; }
+        .header-logo { width: 50px; height: auto; border-radius: 8px; }
+        .badge { font-size: 10px; background: rgba(16, 185, 129, 0.1); color: var(--qvac-green); padding: 6px 14px; border-radius: 20px; border: 1px solid var(--qvac-green); font-weight: bold; }
+        
+        .section-box { background: #0f172a; padding: 25px; border-radius: 16px; margin-bottom: 25px; border: 1px solid #334155; }
+        .input-row { display: flex; gap: 12px; margin-bottom: 15px; }
+        input { flex: 1; padding: 16px; border-radius: 10px; border: 1px solid #475569; background: #1e293b; color: white; }
+        .action-btn { width: 58px; background: #334155; border: none; border-radius: 10px; cursor: pointer; font-size: 20px; color: white; transition: 0.2s; }
+        .btn-active { background: #ef4444 !important; animation: pulse 1.5s infinite; }
+        
+        .submit-btn { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .primary-btn { background: var(--primary); color: white; }
+        .qvac-btn { background: var(--qvac-green); color: #020617; }
+        .console-out { margin-top: 20px; padding: 20px; background: #000; border-left: 4px solid var(--primary); border-radius: 8px; display: none; white-space: pre-wrap; font-family: 'Consolas', monospace; color: #10b981; font-size: 14px; }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div id="splash-screen">
+    <img src="/images/sentinel-logo.png" alt="Sentinel AI" class="logo-display">
+    <div class="loader-track"><div class="loader-fill"></div></div>
+    <p style="color: var(--text-dim); margin-top: 20px; letter-spacing: 3px; font-size: 12px;">SECURE INITIALIZATION...</p>
+</div>
+
+<div class="container">
+    <h1 class="header">
+        <div class="header-logo-container"><img src="/images/sentinel-logo.png" class="header-logo"> SENTINEL AI</div>
+        <span class="badge">QVAC NODE v1.2</span>
+    </h1>
+    
+    <div class="section-box">
+        <h3 style="color: white; margin: 0;">📍 Spatial Telemetry</h3>
+        <p style="color: var(--text-dim); font-size: 13px; margin-bottom: 15px;">High-Accuracy Geographic Deployment</p>
+        <div class="input-row">
+            <input type="text" id="lat" placeholder="Latitude" value="7.4474">
+            <input type="text" id="lng" placeholder="Longitude" value="3.9049">
+            <button class="action-btn" id="gpsBtn" onclick="detectLocation()">🛰️</button>
+        </div>
+        <button class="submit-btn primary-btn" onclick="runCoordinates()">Synchronize Telemetry</button>
+        <div id="coordOutput" class="console-out"></div>
+    </div>
+
+    <div class="section-box" style="border-color: rgba(16, 185, 129, 0.3);">
+        <h3 style="color: white; margin: 0;">🎙️ QVAC Native Core</h3>
+        <p style="color: var(--text-dim); font-size: 13px; margin-bottom: 15px;">Local Inference & Tether WDK Interface</p>
+        <div class="input-row">
+            <input type="text" id="voiceText" placeholder="Command (e.g., 'Check BTC price')">
+            <button class="action-btn" id="micBtn" onclick="startVoiceRecognition()">🎙️</button>
+        </div>
+        <button class="submit-btn qvac-btn" onclick="runQvacOffline()">Execute Native Instruction</button>
+        <div id="qvacOutput" class="console-out" style="border-left-color: var(--qvac-green);"></div>
+    </div>
+</div>
+
+<script>
+    // Boot Sequence
+    window.onload = () => {
+        setTimeout(() => {
+            const s = document.getElementById('splash-screen');
+            s.style.opacity = '0';
+            setTimeout(() => s.style.display = 'none', 800);
+        }, 2800);
+    };
+
+    // GPS Fix
+    function detectLocation() {
+        const btn = document.getElementById('gpsBtn');
+        if (!navigator.geolocation) return alert("GPS not supported.");
+        btn.classList.add('btn-active');
+        navigator.geolocation.getCurrentPosition(
+            (p) => {
+                document.getElementById('lat').value = p.coords.latitude.toFixed(4);
+                document.getElementById('lng').value = p.coords.longitude.toFixed(4);
+                btn.classList.remove('btn-active');
+            },
+            (err) => {
+                btn.classList.remove('btn-active');
+                alert("Location Error: Please allow access in your browser settings.");
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    }
+
+    function startVoiceRecognition() {
+        const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!Speech) return alert("Voice not supported.");
+        const rec = new Speech();
+        const btn = document.getElementById('micBtn');
+        rec.onstart = () => btn.classList.add('btn-active');
+        rec.onresult = (e) => document.getElementById('voiceText').value = e.results[0][0].transcript;
+        rec.onend = () => btn.classList.remove('btn-active');
+        rec.start();
+    }
+
+    async function runCoordinates() {
+        const out = document.getElementById('coordOutput');
+        out.style.display = 'block'; out.innerText = "> Analyzing Satellite Uplink...";
+        try {
+            const res = await fetch('/api/process-coordinates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ latitude: document.getElementById('lat').value, longitude: document.getElementById('lng').value })
+            });
+            const data = await res.json();
+            out.innerText = data.success ? data.report : "> Error.";
+        } catch (e) { out.innerText = "> Local fallback active."; }
+    }
+
+    async function runQvacOffline() {
+        const out = document.getElementById('qvacOutput');
+        out.style.display = 'block'; out.innerText = "> Running QVAC inference...";
+        try {
+            const res = await fetch('/api/qvac-offline-core', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ voiceTranscript: document.getElementById('voiceText').value })
+            });
+            const data = await res.json();
+            out.innerText = data.success ? data.output : "> Failed.";
+        } catch (e) { out.innerText = "> Core unreachable."; }
+    }
+</script>
+</body>
+</html>
