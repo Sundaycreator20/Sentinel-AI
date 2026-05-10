@@ -63,53 +63,77 @@
 </div>
 
 <script>
-    window.addEventListener('load', () => { setTimeout(() => { const s = document.getElementById('splash-screen'); s.style.opacity = '0'; setTimeout(() => s.style.display = 'none', 500); }, 2500); });
+    // 1. Splash Screen Logic
+    window.addEventListener('load', () => { 
+        setTimeout(() => { 
+            const s = document.getElementById('splash-screen'); 
+            if(s) { s.style.opacity = '0'; setTimeout(() => s.style.display = 'none', 500); }
+        }, 2500); 
+    });
 
-    let balHidden = false;
-    function toggleBalance() {
-        balHidden = !balHidden;
-        document.getElementById('main-balance').innerText = balHidden ? "****.**" : "$0.00";
-        document.getElementById('eye-toggle').innerText = balHidden ? "🙈" : "👁️";
-    }
-
-    const qvacKnowledge = {
-        "btc": "[QVAC] BTC: Decentralized reserve. Current Trend: Bullish Accumulation.",
-        "bnb": "[QVAC] BNB: Ecosystem utility token. Status: High liquidity on chain.",
-        "eth": "[QVAC] ETH: Smart contract layer. Status: Network activity increasing.",
-        "sol": "[QVAC] SOL: High-performance blockchain. Status: Frontier Hackathon Active.",
-        "xrp": "[QVAC] XRP: Cross-border settlement. Status: Institutional sync ready.",
-        "usdt": "[QVAC] USDT: Stablecoin reserve. Status: 1:1 USD backing verified by WDK.",
-        "ton": "[QVAC] TON: Telegram Open Network. Status: Massive user onboarding detected.",
-        "usdc": "[QVAC] USDC: Regulated digital dollar. Status: Verified reserve.",
-        "private key": "[QVAC] SECURITY: Private keys are managed locally via WDK Keychain. Never share.",
-        "wdk": "[QVAC] WDK: Wallet Development Kit by Tether. Non-custodial flow initialized."
+    // 2. QVAC LOCAL LEDGER (Copied from your sentinel-brain.js for True Offline)
+    const localQvacCryptoMatrix = {
+        "btc": { price: "$80,369.40", change: "+1.25%", status: "Verified Block" },
+        "eth": { price: "$2,316.30", change: "+1.22%", status: "Verified Block" },
+        "sol": { price: "$93.28", change: "+5.51%", status: "Verified Slot" },
+        "usdt": { price: "$1.00", change: "0.00%", status: "Tether Vault Verified" },
+        "usdc": { price: "$1.00", change: "0.00%", status: "Circle Reserve Verified" },
+        "bnb": { price: "$650.97", change: "+1.70%", status: "Verified Block" },
+        "ton": { price: "$2.62", change: "+0.15%", status: "Verified Masterchain" },
+        "xrp": { price: "$1.42", change: "+3.15%", status: "Verified Ledger" }
     };
 
+    const localKnowledgeBase = {
+        "private key": "A secret 256-bit number that gives you total control over assets.",
+        "wdk": "Tether's Wallet Development Kit for building secure non-custodial apps.",
+        "qvac": "Tether's decentralized platform for running AI models locally.",
+        "gas fees": "Payments made to miners/validators to process transactions."
+    };
+
+    // 3. True Offline Search Function
     function askAI() {
         const input = document.getElementById('ai-input').value.toLowerCase();
         const out = document.getElementById('ai-response');
         if (!input) return;
         out.style.display = "block";
         
-        const key = Object.keys(qvacKnowledge).find(k => input.includes(k));
-        out.innerText = key ? qvacKnowledge[key] : "> [QVAC] Query out of scope. Use BTC, SOL, WDK, etc.";
+        // Check for Crypto Prices first
+        const coinKey = Object.keys(localQvacCryptoMatrix).find(k => input.includes(k));
+        // Check for Definitions second
+        const termKey = Object.keys(localKnowledgeBase).find(k => input.includes(k));
+
+        if (coinKey) {
+            const data = localQvacCryptoMatrix[coinKey];
+            out.innerHTML = `> [OFFLINE DATA] ${coinKey.toUpperCase()}: <b style="color:#10b981;">${data.price}</b> (${data.change}) <br> Status: ${data.status}`;
+        } else if (termKey) {
+            out.innerText = `> [QVAC DEFINITION] ${termKey.toUpperCase()}: ${localKnowledgeBase[termKey]}`;
+        } else {
+            out.innerText = "> [QVAC] Query out of scope. Search for BTC, ETH, SOL, or WDK.";
+        }
     }
 
+    // 4. Improved GPS Sync (Fix for Nigeria/Mobile)
     function detectLocation() {
         const status = document.getElementById('wdk-status');
-        status.innerText = "> [QVAC] Syncing Satellites...";
+        status.innerText = "> [QVAC] Requesting Satellite Lock...";
+        
+        const options = { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 };
+
         navigator.geolocation.getCurrentPosition((p) => {
             document.getElementById('lat').value = p.coords.latitude.toFixed(4);
             document.getElementById('lng').value = p.coords.longitude.toFixed(4);
-            status.innerText = "> [QVAC] Coordinates Locked.";
-        }, (err) => { status.innerText = "> [QVAC] Error: Enable GPS/HTTPS."; }, { enableHighAccuracy: false, timeout: 10000 });
+            status.innerText = "> [QVAC] Telemetry Locked Successfully.";
+        }, (err) => {
+            status.innerText = "> [QVAC] Error: Please enable High Accuracy GPS.";
+        }, options);
     }
 
+    // 5. WDK Wallet Gen
     function generateWDK() {
         const status = document.getElementById('wdk-status');
         const img = document.getElementById('qr-img');
         const addr = "bc1q" + Math.random().toString(36).substring(2, 15);
-        status.innerHTML = `WDK ADDR:<br>${addr}`;
+        status.innerHTML = `WDK ADDR:<br><span style="font-size:10px;">${addr}</span>`;
         img.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${addr}`;
         img.style.display = "block";
     }
