@@ -3,21 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sentinel AI | QVAC Console</title>
+    <title>Sentinel AI | QVAC Frontier</title>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --accent: #10b981; --blue: #3b82f6; --text: #f8fafc; --text-dim: #94a3b8; }
         body { font-family: sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; justify-content: center; }
         .container { width: 100%; max-width: 450px; display: flex; flex-direction: column; gap: 15px; }
         .section-box { background: var(--card); padding: 20px; border-radius: 16px; border: 1px solid #334155; }
         .btn { border: none; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
-        .btn-green { background: var(--accent); }
-        .btn-blue { background: var(--blue); }
-        .btn-outline { background: transparent; border: 1px solid #334155; }
+        .btn-green { background: var(--accent); width: 100%; }
+        .btn-blue { background: var(--blue); width: 100%; }
+        .btn-outline { background: transparent; border: 1px solid #334155; width: 100%; }
         .console-box { background: #000; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; color: var(--accent); border-left: 3px solid var(--accent); margin-top: 10px; min-height: 40px; }
         input { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white; box-sizing: border-box; }
         #qr-img { border: 5px solid white; border-radius: 4px; max-width: 130px; display: none; margin: 10px auto; }
-        
-        /* Splash Screen */
         #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s ease; }
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(16, 185, 129, 0.1); border-top: 4px solid #10b981; border-radius: 50%; animation: spin 1s linear infinite; margin-top: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -43,7 +41,10 @@
     <div class="section-box">
         <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim); font-size: 14px;">Total Equity (USD)</span><span onclick="toggleBalance()" style="cursor:pointer;" id="eye-toggle">👁️</span></div>
         <div class="balance-amount" id="main-balance" style="font-size:32px; font-weight:bold; margin:10px 0;">$0.00</div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"><button class="btn btn-green">➕ Add</button><button class="btn btn-blue">📤 Send</button></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="btn btn-green" onclick="addFunds()">➕ Add</button>
+            <button class="btn btn-blue" onclick="sendFunds()">📤 Send</button>
+        </div>
     </div>
 
     <div class="section-box">
@@ -51,88 +52,103 @@
         <div id="qr-container" style="text-align:center;"><img id="qr-img" src="" alt="QR"></div>
         <div style="display: flex; gap: 5px; margin: 10px 0;"><input type="text" id="lat" placeholder="Latitude" readonly><input type="text" id="lng" placeholder="Longitude" readonly></div>
         <div id="wdk-status" class="console-box">> System Idle...</div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px;"><button class="btn btn-outline" onclick="detectLocation()">📍 Sync GPS</button><button class="btn btn-outline" onclick="generateWDK()">🔑 Gen WDK</button></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px;">
+            <button class="btn btn-outline" onclick="detectLocation()">📍 Sync GPS</button>
+            <button class="btn btn-outline" onclick="generateWDK()">🔑 Gen WDK</button>
+        </div>
     </div>
 
     <div class="section-box">
         <h3 style="margin:0; font-size:16px;">🤖 QVAC AI Agent</h3>
-        <div style="position: relative; margin: 10px 0;"><input type="text" id="ai-input" placeholder="Query QVAC Fabric..."><span onclick="startVoice()" style="position: absolute; right: 10px; top: 10px; cursor: pointer;">🎙️</span></div>
+        <div style="position: relative; margin: 10px 0;"><input type="text" id="ai-input" placeholder="Query BTC, SOL, or WDK..."><span onclick="startVoice()" style="position: absolute; right: 10px; top: 10px; cursor: pointer;">🎙️</span></div>
         <button class="btn btn-blue" style="width:100%;" onclick="askAI()" id="ai-btn">Search Fabric</button>
         <div id="ai-response" class="console-box" style="display:none; color: #cbd5e1;"></div>
     </div>
 </div>
 
 <script>
-    // 1. Splash Screen Logic
-    window.addEventListener('load', () => { 
-        setTimeout(() => { 
-            const s = document.getElementById('splash-screen'); 
-            if(s) { s.style.opacity = '0'; setTimeout(() => s.style.display = 'none', 500); }
-        }, 2500); 
-    });
+    window.addEventListener('load', () => { setTimeout(() => { const s = document.getElementById('splash-screen'); s.style.opacity = '0'; setTimeout(() => s.style.display = 'none', 500); }, 2500); });
 
-    // 2. QVAC LOCAL LEDGER (Copied from your sentinel-brain.js for True Offline)
+    let balHidden = false;
+    function toggleBalance() {
+        balHidden = !balHidden;
+        document.getElementById('main-balance').innerText = balHidden ? "****.**" : "$0.00";
+        document.getElementById('eye-toggle').innerText = balHidden ? "🙈" : "👁️";
+    }
+
+    // --- WORKING ACTIONS ---
+    function addFunds() {
+        const status = document.getElementById('wdk-status');
+        const img = document.getElementById('qr-img');
+        const depositAddr = "T" + Math.random().toString(36).substring(2, 18).toUpperCase();
+        status.innerHTML = `<span style="color:#10b981;">DEPOSIT ADDRESS:</span><br><span style="font-size:10px;">${depositAddr}</span>`;
+        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${depositAddr}`;
+        img.style.display = "block";
+        alert("Generating Tether (USDT) Deposit Address...");
+    }
+
+    function sendFunds() {
+        const amount = prompt("How much USDT do you want to send?");
+        if (amount && !isNaN(amount)) {
+            const status = document.getElementById('wdk-status');
+            status.innerText = `> [WDK] Initiating transfer of ${amount} USDT...`;
+            setTimeout(() => { status.innerText = `> [WDK] Error: Insufficient Balance ($0.00). Please add funds.`; }, 2000);
+        }
+    }
+
+    // --- INTACT KNOWLEDGE BASES ---
     const localQvacCryptoMatrix = {
-        "btc": { price: "$80,369.40", change: "+1.25%", status: "Verified Block" },
-        "eth": { price: "$2,316.30", change: "+1.22%", status: "Verified Block" },
-        "sol": { price: "$93.28", change: "+5.51%", status: "Verified Slot" },
-        "usdt": { price: "$1.00", change: "0.00%", status: "Tether Vault Verified" },
-        "usdc": { price: "$1.00", change: "0.00%", status: "Circle Reserve Verified" },
-        "bnb": { price: "$650.97", change: "+1.70%", status: "Verified Block" },
-        "ton": { price: "$2.62", change: "+0.15%", status: "Verified Masterchain" },
-        "xrp": { price: "$1.42", change: "+3.15%", status: "Verified Ledger" }
+        "btc": { p: "$80,369.40", c: "+1.25%", s: "Verified Block" },
+        "eth": { p: "$2,316.30", c: "+1.22%", s: "Verified Block" },
+        "sol": { p: "$93.28", c: "+5.51%", s: "Verified Slot" },
+        "usdt": { p: "$1.00", c: "0.00%", s: "Tether Vault Verified" },
+        "usdc": { p: "$1.00", c: "0.00%", s: "Circle Reserve Verified" },
+        "bnb": { p: "$650.97", c: "+1.70%", s: "Verified Block" },
+        "ton": { p: "$2.62", c: "+0.15%", s: "Verified Masterchain" },
+        "xrp": { p: "$1.42", c: "+3.15%", s: "Verified Ledger" }
     };
 
     const localKnowledgeBase = {
-        "private key": "A secret 256-bit number that gives you total control over assets.",
+        "private key": "A secret 256-bit number that gives you total control over assets. Never share it.",
         "wdk": "Tether's Wallet Development Kit for building secure non-custodial apps.",
-        "qvac": "Tether's decentralized platform for running AI models locally.",
-        "gas fees": "Payments made to miners/validators to process transactions."
+        "qvac": "Tether's decentralized platform for running AI models locally and securely.",
+        "gas fees": "Small payments made to validators to process your transactions on the blockchain."
     };
 
-    // 3. True Offline Search Function
     function askAI() {
         const input = document.getElementById('ai-input').value.toLowerCase();
         const out = document.getElementById('ai-response');
         if (!input) return;
         out.style.display = "block";
-        
-        // Check for Crypto Prices first
+
         const coinKey = Object.keys(localQvacCryptoMatrix).find(k => input.includes(k));
-        // Check for Definitions second
         const termKey = Object.keys(localKnowledgeBase).find(k => input.includes(k));
 
         if (coinKey) {
-            const data = localQvacCryptoMatrix[coinKey];
-            out.innerHTML = `> [OFFLINE DATA] ${coinKey.toUpperCase()}: <b style="color:#10b981;">${data.price}</b> (${data.change}) <br> Status: ${data.status}`;
+            const d = localQvacCryptoMatrix[coinKey];
+            out.innerHTML = `> [OFFLINE DATA] ${coinKey.toUpperCase()}: <b style="color:#10b981;">${d.p}</b> (${d.c})<br>Status: ${d.s}`;
         } else if (termKey) {
             out.innerText = `> [QVAC DEFINITION] ${termKey.toUpperCase()}: ${localKnowledgeBase[termKey]}`;
         } else {
-            out.innerText = "> [QVAC] Query out of scope. Search for BTC, ETH, SOL, or WDK.";
+            out.innerText = "> [QVAC] Query out of scope for offline fabric.";
         }
     }
 
-    // 4. Improved GPS Sync (Fix for Nigeria/Mobile)
+    // --- GPS & WDK ---
     function detectLocation() {
         const status = document.getElementById('wdk-status');
-        status.innerText = "> [QVAC] Requesting Satellite Lock...";
-        
-        const options = { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 };
-
+        status.innerText = "> [QVAC] Syncing Satellite...";
         navigator.geolocation.getCurrentPosition((p) => {
             document.getElementById('lat').value = p.coords.latitude.toFixed(4);
             document.getElementById('lng').value = p.coords.longitude.toFixed(4);
-            status.innerText = "> [QVAC] Telemetry Locked Successfully.";
-        }, (err) => {
-            status.innerText = "> [QVAC] Error: Please enable High Accuracy GPS.";
-        }, options);
+            status.innerText = "> [QVAC] Coordinates Locked.";
+        }, (e) => { status.innerText = "> [QVAC] GPS Permission Required."; });
     }
 
-    // 5. WDK Wallet Gen
     function generateWDK() {
         const status = document.getElementById('wdk-status');
         const img = document.getElementById('qr-img');
-        const addr = "bc1q" + Math.random().toString(36).substring(2, 15);
+        const addr = "bc1q" + Math.random().toString(36).substring(2, 12);
         status.innerHTML = `WDK ADDR:<br><span style="font-size:10px;">${addr}</span>`;
         img.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${addr}`;
         img.style.display = "block";
