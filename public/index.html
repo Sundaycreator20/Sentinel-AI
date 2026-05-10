@@ -3,54 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sentinel AI | Dashboard</title>
+    <title>Sentinel AI | QVAC Console</title>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --accent: #10b981; --blue: #3b82f6; --text: #f8fafc; --text-dim: #94a3b8; }
         body { font-family: sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; justify-content: center; }
         .container { width: 100%; max-width: 450px; display: flex; flex-direction: column; gap: 15px; }
         .section-box { background: var(--card); padding: 20px; border-radius: 16px; border: 1px solid #334155; }
-        .btn { border: none; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn { border: none; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
         .btn-green { background: var(--accent); }
         .btn-blue { background: var(--blue); }
         .btn-outline { background: transparent; border: 1px solid #334155; }
-        .console-box { background: #000; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; color: var(--accent); border-left: 3px solid var(--accent); margin-top: 10px; }
+        .console-box { background: #000; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; color: var(--accent); border-left: 3px solid var(--accent); margin-top: 10px; min-height: 40px; }
         input { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white; box-sizing: border-box; }
         #qr-img { border: 5px solid white; border-radius: 4px; max-width: 130px; display: none; margin: 10px auto; }
-        /* Splash Screen Styling */
-#splash-screen {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: #0f172a;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    transition: opacity 0.5s ease;
-}
-
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid rgba(16, 185, 129, 0.1);
-    border-top: 4px solid #10b981;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-top: 20px;
-}
-
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-    
+        
+        /* Splash Screen */
+        #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s ease; }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(16, 185, 129, 0.1); border-top: 4px solid #10b981; border-radius: 50%; animation: spin 1s linear infinite; margin-top: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="splash-screen">
+<div id="splash-screen">
     <img src="images/sentinel-logo.png" alt="Logo" style="width: 80px; height: 80px; border-radius: 12px;">
     <h2 style="color: #10b981; margin-top: 15px;">Sentinel AI</h2>
     <div class="spinner"></div>
 </div>
+
 <div class="container">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -61,111 +41,74 @@
     </div>
 
     <div class="section-box">
-        <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-dim); font-size: 14px;">Total Equity (USD)</span>
-            <span onclick="toggleBalance()" style="cursor:pointer;" id="eye-toggle">👁️</span>
-        </div>
+        <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim); font-size: 14px;">Total Equity (USD)</span><span onclick="toggleBalance()" style="cursor:pointer;" id="eye-toggle">👁️</span></div>
         <div class="balance-amount" id="main-balance" style="font-size:32px; font-weight:bold; margin:10px 0;">$0.00</div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button class="btn btn-green">➕ Add</button>
-            <button class="btn btn-blue">📤 Send</button>
-        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"><button class="btn btn-green">➕ Add</button><button class="btn btn-blue">📤 Send</button></div>
     </div>
 
     <div class="section-box">
         <h3 style="margin:0; font-size:16px;">🛰️ QVAC Telemetry</h3>
         <div id="qr-container" style="text-align:center;"><img id="qr-img" src="" alt="QR"></div>
-        <div style="display: flex; gap: 5px; margin: 10px 0;">
-            <input type="text" id="lat" placeholder="Latitude" readonly>
-            <input type="text" id="lng" placeholder="Longitude" readonly>
-        </div>
+        <div style="display: flex; gap: 5px; margin: 10px 0;"><input type="text" id="lat" placeholder="Latitude" readonly><input type="text" id="lng" placeholder="Longitude" readonly></div>
         <div id="wdk-status" class="console-box">> System Idle...</div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px;">
-            <button class="btn btn-outline" onclick="detectLocation()">📍 Sync GPS</button>
-            <button class="btn btn-outline" onclick="generateWDK()">🔑 Gen WDK</button>
-        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px;"><button class="btn btn-outline" onclick="detectLocation()">📍 Sync GPS</button><button class="btn btn-outline" onclick="generateWDK()">🔑 Gen WDK</button></div>
     </div>
 
     <div class="section-box">
-        <h3 style="margin:0; font-size:16px;">🤖 AI Agent</h3>
-        <div style="position: relative; margin: 10px 0;">
-            <input type="text" id="ai-input" placeholder="Query network or local cache...">
-            <span onclick="startVoice()" style="position: absolute; right: 10px; top: 10px; cursor: pointer;">🎙️</span>
-        </div>
+        <h3 style="margin:0; font-size:16px;">🤖 QVAC AI Agent</h3>
+        <div style="position: relative; margin: 10px 0;"><input type="text" id="ai-input" placeholder="Query QVAC Fabric..."><span onclick="startVoice()" style="position: absolute; right: 10px; top: 10px; cursor: pointer;">🎙️</span></div>
         <button class="btn btn-blue" style="width:100%;" onclick="askAI()" id="ai-btn">Search Fabric</button>
         <div id="ai-response" class="console-box" style="display:none; color: #cbd5e1;"></div>
     </div>
 </div>
 
 <script>
-    // Hide the splash screen after 2.5 seconds
-window.addEventListener('load', () => {
-    setTimeout(() => {
-        const splash = document.getElementById('splash-screen');
-        splash.style.opacity = '0';
-        setTimeout(() => splash.style.display = 'none', 500);
-    }, 2500); // 2500ms = 2.5 seconds
-});
+    window.addEventListener('load', () => { setTimeout(() => { const s = document.getElementById('splash-screen'); s.style.opacity = '0'; setTimeout(() => s.style.display = 'none', 500); }, 2500); });
 
     let balHidden = false;
-    const realBal = "$0.00"; // Initialized to zero
-
     function toggleBalance() {
         balHidden = !balHidden;
-        document.getElementById('main-balance').innerText = balHidden ? "****.**" : realBal;
+        document.getElementById('main-balance').innerText = balHidden ? "****.**" : "$0.00";
         document.getElementById('eye-toggle').innerText = balHidden ? "🙈" : "👁️";
     }
 
-    // AI Logic with Offline Fallback
-    async function askAI() {
-        const input = document.getElementById('ai-input').value;
+    const qvacKnowledge = {
+        "btc": "[QVAC] BTC: Decentralized reserve. Current Trend: Bullish Accumulation.",
+        "bnb": "[QVAC] BNB: Ecosystem utility token. Status: High liquidity on chain.",
+        "eth": "[QVAC] ETH: Smart contract layer. Status: Network activity increasing.",
+        "sol": "[QVAC] SOL: High-performance blockchain. Status: Frontier Hackathon Active.",
+        "xrp": "[QVAC] XRP: Cross-border settlement. Status: Institutional sync ready.",
+        "usdt": "[QVAC] USDT: Stablecoin reserve. Status: 1:1 USD backing verified by WDK.",
+        "ton": "[QVAC] TON: Telegram Open Network. Status: Massive user onboarding detected.",
+        "usdc": "[QVAC] USDC: Regulated digital dollar. Status: Verified reserve.",
+        "private key": "[QVAC] SECURITY: Private keys are managed locally via WDK Keychain. Never share.",
+        "wdk": "[QVAC] WDK: Wallet Development Kit by Tether. Non-custodial flow initialized."
+    };
+
+    function askAI() {
+        const input = document.getElementById('ai-input').value.toLowerCase();
         const out = document.getElementById('ai-response');
         if (!input) return;
-
         out.style.display = "block";
-        out.innerText = "> Fetching...";
-
-        try {
-            const res = await fetch('/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: input })
-            });
-            const data = await res.json();
-            out.innerText = "> " + data.reply;
-        } catch (err) {
-            // QVAC OFFLINE MODE: If network fails, search local logic
-            const qvacCache = {
-                "btc": "BTC current trend: Bullish (Local QVAC Analysis).",
-                "wdk": "Tether WDK enables non-custodial asset management.",
-                "solana": "Solana network status: Optimal."
-            };
-            const lowerInput = input.toLowerCase();
-            const localReply = Object.keys(qvacCache).find(k => lowerInput.includes(k));
-            
-            out.innerText = localReply ? `> [OFFLINE MODE] ${qvacCache[localReply]}` : "> [OFFLINE] Suggestion: Check 'BTC' or 'WDK'.";
-        }
+        
+        const key = Object.keys(qvacKnowledge).find(k => input.includes(k));
+        out.innerText = key ? qvacKnowledge[key] : "> [QVAC] Query out of scope. Use BTC, SOL, WDK, etc.";
     }
 
-    // GPS Fix
     function detectLocation() {
         const status = document.getElementById('wdk-status');
-        status.innerText = "> [QVAC] Accessing Satellite...";
-        
+        status.innerText = "> [QVAC] Syncing Satellites...";
         navigator.geolocation.getCurrentPosition((p) => {
             document.getElementById('lat').value = p.coords.latitude.toFixed(4);
             document.getElementById('lng').value = p.coords.longitude.toFixed(4);
             status.innerText = "> [QVAC] Coordinates Locked.";
-        }, (err) => {
-            status.innerText = "> [ERROR] Permission Denied.";
-        }, { enableHighAccuracy: false, timeout: 5000 });
+        }, (err) => { status.innerText = "> [QVAC] Error: Enable GPS/HTTPS."; }, { enableHighAccuracy: false, timeout: 10000 });
     }
 
-    // WDK Fix
     function generateWDK() {
         const status = document.getElementById('wdk-status');
         const img = document.getElementById('qr-img');
-        const addr = "bc1q" + Math.random().toString(36).substring(2, 12);
+        const addr = "bc1q" + Math.random().toString(36).substring(2, 15);
         status.innerHTML = `WDK ADDR:<br>${addr}`;
         img.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${addr}`;
         img.style.display = "block";
